@@ -1,13 +1,13 @@
-# sshwarden
+# bwsshd
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Go](https://img.shields.io/github/go-mod/go-version/Dxsk/sshwarden?logo=go&logoColor=white)](go.mod)
+[![Go](https://img.shields.io/github/go-mod/go-version/Dxsk/bwsshd?logo=go&logoColor=white)](go.mod)
 [![Platform](https://img.shields.io/badge/platform-Linux-informational)](#requirements)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-dxsk-yellow?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/dxsk)
 
 Keep your `ssh_config` in sync with the SSH keys stored in your Bitwarden vault.
 
-`sshwarden` watches the Bitwarden desktop SSH agent and generates a per-host
+`bwsshd` watches the Bitwarden desktop SSH agent and generates a per-host
 `ssh_config` that pins exactly one key per host. SSH then offers the right key
 first, which matters on hardened servers where `MaxAuthTries` is low (3 or less)
 and offering a dozen agent keys gets you disconnected before the correct one is
@@ -21,7 +21,7 @@ every key it holds, in no host-aware order. With many keys and a hardened
 server, SSH hits the auth-attempt limit before reaching the right key and the
 connection fails with `Permission denied (publickey)`.
 
-`sshwarden` fixes this by reading the key list from the agent and writing one
+`bwsshd` fixes this by reading the key list from the agent and writing one
 config block per host with `IdentitiesOnly yes`, so SSH offers a single,
 deterministic key per host. One key, one attempt, no wasted tries.
 
@@ -33,7 +33,7 @@ so the backend does not change anything.
 ## How it works
 
 The name you give an SSH key item in Bitwarden becomes the key comment in the
-agent. `sshwarden` reads that comment, extracts a target from it, and writes a
+agent. `bwsshd` reads that comment, extracts a target from it, and writes a
 block like this:
 
 ```
@@ -41,7 +41,7 @@ Host pve1.example.com
     HostName pve1.example.com
     User debian
     IdentityAgent <bitwarden-agent-socket>
-    IdentityFile ~/.ssh/sshwarden-keys/pve1.example.com.pub
+    IdentityFile ~/.ssh/bwsshd-keys/pve1.example.com.pub
     IdentitiesOnly yes
 ```
 
@@ -52,7 +52,7 @@ approve the signature, the key never touches disk.
 Keys whose Bitwarden name has no hostname in it (for example a shared `ansible`
 key used on many servers) are written as `.pub` files and listed as comments in
 the generated file. Add a manual `Host` block for those in your own
-`~/.ssh/config`, referencing the `.pub` that sshwarden dropped.
+`~/.ssh/config`, referencing the `.pub` that bwsshd dropped.
 
 ## Naming convention
 
@@ -68,13 +68,13 @@ optional `user@` prefix sets the SSH user, and a trailing `:port` sets the port
 - `debian@pve1.example.com:2222` (also sets `User debian` and `Port 2222`)
 
 Version-like tokens such as `v1.2` are ignored, so they are never mistaken for a
-hostname. Add `[nosshwarden]` anywhere in the name to make sshwarden skip a key
+hostname. Add `[nobwsshd]` anywhere in the name to make bwsshd skip a key
 entirely.
 
 ## Install
 
 ```sh
-go install github.com/Dxsk/sshwarden@latest
+go install github.com/Dxsk/bwsshd@latest
 ```
 
 Or build from source into `dist/`:
@@ -83,7 +83,7 @@ Or build from source into `dist/`:
 make build
 ```
 
-On first run, sshwarden adds this line to the top of your `~/.ssh/config`
+On first run, bwsshd adds this line to the top of your `~/.ssh/config`
 automatically (only once), so plain `ssh host` picks up the generated blocks:
 
 ```
@@ -95,13 +95,13 @@ Include /home/you/.ssh/config.automatic.bw
 Run once to generate the config now:
 
 ```sh
-sshwarden
+bwsshd
 ```
 
 Run as a background daemon that regenerates on every key change:
 
 ```sh
-sshwarden -watch
+bwsshd -watch
 ```
 
 ### Run at login (systemd user service)
@@ -114,11 +114,11 @@ This builds a stripped static binary into `~/.local/bin`, installs the user
 service, and enables it. Follow the logs with:
 
 ```sh
-journalctl --user -u sshwarden -f
+journalctl --user -u bwsshd -f
 ```
 
 The daemon polls the agent and rewrites the config only when the key set
-changes. When the Bitwarden app is closed the socket is absent, sshwarden clears
+changes. When the Bitwarden app is closed the socket is absent, bwsshd clears
 the generated config and removes its key directory until the app comes back.
 
 ## Flags
@@ -127,7 +127,7 @@ the generated config and removes its key directory until the app comes back.
 |------|---------|-------------|
 | `-sock` | auto-discover | SSH agent socket; empty means auto-discover native, Flatpak and Snap paths |
 | `-out` | `~/.ssh/config.automatic.bw` | Generated ssh_config file |
-| `-keydir` | `~/.ssh/sshwarden-keys` | Where public keys are written |
+| `-keydir` | `~/.ssh/bwsshd-keys` | Where public keys are written |
 | `-ssh-config` | `~/.ssh/config` | ssh_config to add the Include line to |
 | `-watch` | off | Loop instead of a single run |
 | `-interval` | `10s` | Poll interval in watch mode |
@@ -138,7 +138,7 @@ Auto-discovery also honors `BW_SSH_SOCK` and `BITWARDEN_SSH_AUTH_SOCK` if set.
 
 - Refuses to run as root, all files belong to your user.
 - Config and keys are written `0600`, the key directory is `0700`.
-- The key directory is fully managed by sshwarden via a marker file, and it
+- The key directory is fully managed by bwsshd via a marker file, and it
   refuses to touch a directory it does not own, so it can never delete your own
   keys.
 

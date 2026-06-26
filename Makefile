@@ -1,4 +1,4 @@
-BIN := dist/sshwarden
+BIN := dist/bwsshd
 PREFIX := $(HOME)/.local
 UNITDIR := $(HOME)/.config/systemd/user
 
@@ -14,13 +14,13 @@ clean:
 	rm -f $(BIN)
 
 install: build
-	install -Dm755 $(BIN) $(PREFIX)/bin/sshwarden
-	install -Dm644 systemd/sshwarden.service $(UNITDIR)/sshwarden.service
+	install -Dm755 $(BIN) $(PREFIX)/bin/bwsshd
+	install -Dm644 systemd/bwsshd.service $(UNITDIR)/bwsshd.service
 	systemctl --user daemon-reload
-	systemctl --user enable --now sshwarden.service
-	@echo "logs: journalctl --user -u sshwarden -f"
+	systemctl --user enable --now bwsshd.service
+	@echo "logs: journalctl --user -u bwsshd -f"
 
 uninstall:
-	-systemctl --user disable --now sshwarden.service
-	rm -f $(PREFIX)/bin/sshwarden $(UNITDIR)/sshwarden.service
+	-systemctl --user disable --now bwsshd.service
+	rm -f $(PREFIX)/bin/bwsshd $(UNITDIR)/bwsshd.service
 	systemctl --user daemon-reload

@@ -1,4 +1,4 @@
-module github.com/Dxsk/sshwarden
+module github.com/Dxsk/bwsshd
 
 go 1.26.4
 

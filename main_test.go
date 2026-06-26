@@ -35,11 +35,11 @@ func TestParseTarget(t *testing.T) {
 
 func TestSkipKey(t *testing.T) {
 	skip := map[string]bool{
-		"backup [nosshwarden] old":       true,
-		"[nosshwarden]":                  true,
+		"backup [nobwsshd] old":       true,
+		"[nobwsshd]":                  true,
 		"debian@mtmg.example.com":        false,
-		"pve1.example.com [nosshwarden]": true,
-		"nosshwarden":                    false, // needs the brackets
+		"pve1.example.com [nobwsshd]": true,
+		"nobwsshd":                    false, // needs the brackets
 	}
 	for in, want := range skip {
 		if got := skipKey(in); got != want {
