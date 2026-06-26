@@ -169,7 +169,7 @@ func generate(keys []*agent.Key, out, keydir, sock string) error {
 	hosts := 0
 
 	for _, k := range keys {
-		if strings.Contains(k.Comment, "[nosshwarden]") {
+		if skipKey(k.Comment) {
 			continue
 		}
 
@@ -306,6 +306,11 @@ func clean(out, keydir string) error {
 	}
 	log.Printf("agent socket absent, cleared %s", out)
 	return nil
+}
+
+// skipKey reports whether a Bitwarden key name opts out of sshwarden.
+func skipKey(comment string) bool {
+	return strings.Contains(comment, "[nosshwarden]")
 }
 
 // parseTarget returns the host and optional login user from the first token

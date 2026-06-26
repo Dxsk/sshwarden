@@ -30,6 +30,21 @@ func TestParseTarget(t *testing.T) {
 	}
 }
 
+func TestSkipKey(t *testing.T) {
+	skip := map[string]bool{
+		"backup [nosshwarden] old":       true,
+		"[nosshwarden]":                  true,
+		"debian@mtmg.example.com":        false,
+		"pve1.example.com [nosshwarden]": true,
+		"nosshwarden":                    false, // needs the brackets
+	}
+	for in, want := range skip {
+		if got := skipKey(in); got != want {
+			t.Errorf("skipKey(%q) = %v, want %v", in, got, want)
+		}
+	}
+}
+
 func TestSanitize(t *testing.T) {
 	if got := sanitize(" my key/name "); got != "my_key_name" {
 		t.Errorf("sanitize = %q", got)
