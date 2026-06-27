@@ -211,6 +211,30 @@ Auto-discovery also honors `BW_SSH_SOCK` and `BITWARDEN_SSH_AUTH_SOCK` if set.
 
 ---
 
+## Contributing
+
+Issues and pull requests are welcome.
+
+For a bug or a behavior change, opening an issue first helps, a small
+reproduction goes a long way.
+
+A few things keep the pipeline happy:
+
+- Keep the code `gofmt`-clean and `go vet`-clean, CI checks both.
+- Add a test when you change behavior, the filesystem paths are covered with
+  `t.TempDir()` and an in-process SSH agent, follow the same style.
+- Use [Conventional Commits](https://www.conventionalcommits.org) for commit
+  messages (`fix:`, `feat:`, ...), the changelog and version bumps are generated
+  from them automatically.
+
+CI builds and tests every push and pull request, and releases are cut
+automatically once a release PR is merged.
+
+## Thanks
+
+Thanks to [@Andralax](https://github.com/Andralax) for the careful bug reports
+and review that shaped the first releases.
+
 ## Support
 
 If this saved you some headaches, you can
