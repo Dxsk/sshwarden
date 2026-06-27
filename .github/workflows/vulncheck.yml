@@ -1,0 +1,22 @@
+name: Vulncheck
+
+# Scan dependencies for known CVEs. govulncheck only flags vulnerabilities that
+# are actually reachable from this code, so it stays low-noise.
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+  push:
+    branches: [main, develop]
+    paths: [go.mod, go.sum]
+
+permissions:
+  contents: read
+
+jobs:
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4
+        with:
+          go-version-file: go.mod
