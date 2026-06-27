@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"time"
@@ -19,8 +20,30 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 )
 
-// version is set at build time by goreleaser via -ldflags -X main.version.
-var version = "dev"
+// version is injected at release time by goreleaser (-ldflags -X main.version).
+// It is intentionally empty by default: nobody edits a version by hand. For a
+// plain `go build`/`go install` it falls back to the data Go embeds itself.
+var version = ""
+
+// buildVersion resolves the version without any hand-maintained number:
+// goreleaser's ldflags if present, else the module version from `go install
+// module@vX.Y.Z`, else the VCS revision, else "dev".
+func buildVersion() string {
+	if version != "" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok {
+		if info.Main.Version != "" && info.Main.Version != "(devel)" {
+			return info.Main.Version
+		}
+		for _, s := range info.Settings {
+			if s.Key == "vcs.revision" {
+				return s.Value
+			}
+		}
+	}
+	return "dev"
+}
 
 func main() {
 	log.SetPrefix("bwsshd: ")
@@ -41,7 +64,7 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Println(version)
+		fmt.Println(buildVersion())
 		return
 	}
 
