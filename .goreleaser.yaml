@@ -1,0 +1,37 @@
+version: 2
+
+project_name: bwsshd
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos: [linux]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    # Bundle a Makefile (simple `make install`) plus the systemd unit, README
+    # and license alongside the binary. strip_parent flattens them to the root.
+    files:
+      - src: packaging/Makefile
+        dst: .
+        strip_parent: true
+      - src: systemd/bwsshd.service
+        dst: .
+        strip_parent: true
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: checksums.txt
+
+# release-please owns the changelog; don't let goreleaser write its own.
+changelog:
+  disable: true

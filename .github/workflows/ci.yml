@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    # ubuntu-latest is only the host VM; the job itself runs inside the
+    # container image below (GitHub offers no Debian/Alpine-native runner).
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Build and test on glibc (Debian) and musl (Alpine).
+        image: [golang:1.26-bookworm, golang:1.26-alpine]
+    steps:
+      # actions/checkout ships a glibc node binary; gcompat lets it run on musl.
+      - name: glibc compat (alpine)
+        if: ${{ contains(matrix.image, 'alpine') }}
+        run: apk add --no-cache gcompat
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || { echo "not gofmt-clean, run gofmt -w ."; gofmt -l .; exit 1; }
+      - run: go vet ./...
+      - run: go build ./...
+      - run: go test -cover ./...
