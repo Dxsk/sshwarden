@@ -46,7 +46,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cands := candidateSocks(*sock)
+	cands := candidateSocks(*sock, home)
 
 	if !*watch {
 		if _, err := sync(cands, *out, *keydir, ""); err != nil {
@@ -79,7 +79,7 @@ const stateAbsent = "absent"
 // the Bitwarden desktop socket across native, Flatpak and Snap installs — the
 // agent socket is created by the desktop client, so a Vaultwarden backend uses
 // the same paths.
-func candidateSocks(explicit string) []string {
+func candidateSocks(explicit, home string) []string {
 	if explicit != "" {
 		return []string{explicit}
 	}
@@ -89,7 +89,6 @@ func candidateSocks(explicit string) []string {
 			c = append(c, v)
 		}
 	}
-	home, _ := os.UserHomeDir()
 	return append(c,
 		filepath.Join(home, ".bitwarden-ssh-agent.sock"),                                     // native / deb / rpm
 		filepath.Join(home, ".var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock"), // flatpak
@@ -141,7 +140,8 @@ func probe(candidates []string) (keys []*agent.Key, sock string, present bool) {
 func fingerprint(keys []*agent.Key) string {
 	fps := make([]string, 0, len(keys))
 	for _, k := range keys {
-		fps = append(fps, ssh.FingerprintSHA256(k))
+		// Comment carries host/user/port and [nobwsshd]; a rename must regenerate.
+		fps = append(fps, ssh.FingerprintSHA256(k)+"\x00"+k.Comment)
 	}
 	sort.Strings(fps)
 	return "present:" + strings.Join(fps, ",")
@@ -252,9 +252,15 @@ func ensureInclude(sshConfig, out string) error {
 	}
 	for _, l := range strings.Split(string(data), "\n") {
 		f := strings.Fields(l)
-		if len(f) >= 2 && strings.EqualFold(f[0], "Include") &&
-			(f[1] == abs || filepath.Base(f[1]) == filepath.Base(out)) {
-			return nil // already included
+		if len(f) < 2 || !strings.EqualFold(f[0], "Include") {
+			continue
+		}
+		// Include can list several files; compare each by absolute path so a
+		// same-basename include of a different file isn't a false match.
+		for _, inc := range f[1:] {
+			if p, err := filepath.Abs(inc); err == nil && p == abs {
+				return nil // already included
+			}
 		}
 	}
 	if err := os.MkdirAll(filepath.Dir(sshConfig), 0700); err != nil {

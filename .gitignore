@@ -113,5 +113,6 @@ secrets/
 *.key
 *.pem
 credentials.json
+
 # Stray root binary from `go build .`
-/sshwarden
+/bwsshd
