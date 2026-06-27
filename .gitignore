@@ -21,6 +21,8 @@ vendor/
 /dist/*
 !/dist/.gitkeep
 /bin/
+# goreleaser output dir
+/build/
 
 # IDE
 .idea/

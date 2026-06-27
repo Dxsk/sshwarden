@@ -2,6 +2,10 @@ version: 2
 
 project_name: bwsshd
 
+# Output to build/ so goreleaser's --clean never touches the tracked
+# dist/.gitkeep (which would leave the tree dirty and abort the release).
+dist: build
+
 before:
   hooks:
     - go mod tidy
