@@ -16,34 +16,44 @@
 ---
 
 `bwsshd` watches the Bitwarden desktop SSH agent and generates a per-host
-`ssh_config` that pins exactly one key per host. SSH then offers the right key
-first, which matters on hardened servers where `MaxAuthTries` is low (3 or less)
-and offering a dozen agent keys gets you disconnected before the correct one is
-tried.
+`ssh_config` that pins exactly one key per host.
+
+SSH then offers the right key first, which matters on hardened servers where
+`MaxAuthTries` is low (3 or less) and offering a dozen agent keys gets you
+disconnected before the correct one is tried.
 
 ## Why this exists
 
 The Bitwarden desktop app can act as an
 [SSH agent](https://bitwarden.com/help/ssh-agent/#ssh-agent): your private keys
-never leave the vault and signing happens in the app. The catch is that the
-agent offers every key it holds, in no host-aware order. With many keys and a
-hardened server, SSH hits the auth-attempt limit before reaching the right key
-and the connection fails with `Permission denied (publickey)`.
+never leave the vault and signing happens in the app.
+
+The catch is that the agent offers every key it holds, in no host-aware order.
+
+With many keys and a hardened server, SSH hits the auth-attempt limit before
+reaching the right key and the connection fails with
+`Permission denied (publickey)`.
 
 `bwsshd` fixes this by reading the key list from the agent and writing one
 config block per host with `IdentitiesOnly yes`, so SSH offers a single,
-deterministic key per host. One key, one attempt, no wasted tries.
+deterministic key per host.
+
+One key, one attempt, no wasted tries.
 
 It also works the same whether your Bitwarden desktop app is the native package,
 the Flatpak or the Snap, and whether your backend is Bitwarden cloud or a
-self-hosted Vaultwarden. The SSH agent socket is created by the desktop client,
-so the backend does not change anything.
+self-hosted Vaultwarden.
+
+The SSH agent socket is created by the desktop client, so the backend does not
+change anything.
 
 ## How it works
 
 The name you give an SSH key item in Bitwarden becomes the key comment in the
-agent. `bwsshd` reads that comment, extracts a target from it, and writes a
-block like this:
+agent.
+
+`bwsshd` reads that comment, extracts a target from it, and writes a block like
+this:
 
 ```
 Host pve1.example.com
@@ -54,21 +64,29 @@ Host pve1.example.com
     IdentitiesOnly yes
 ```
 
-The private key stays in the vault. The `.pub` file only tells SSH which key
-fingerprint to request a signature for. When you connect, Bitwarden pops up to
-approve the signature, the key never touches disk.
+The private key stays in the vault.
+
+The `.pub` file only tells SSH which key fingerprint to request a signature for.
+
+When you connect, Bitwarden pops up to approve the signature, the key never
+touches disk.
 
 Keys whose Bitwarden name has no hostname in it (for example a shared `ansible`
 key used on many servers) are written as `.pub` files and listed as comments in
-the generated file. Add a manual `Host` block for those in your own
-`~/.ssh/config`, referencing the `.pub` that bwsshd dropped.
+the generated file.
+
+Add a manual `Host` block for those in your own `~/.ssh/config`, referencing the
+`.pub` that bwsshd dropped.
 
 ## Naming convention
 
-Name your Bitwarden SSH key items with the target. The first token shaped like
-`[user@]host[:port]` is used: the first hostname or IP becomes the host, an
-optional `user@` prefix sets the SSH user, and a trailing `:port` sets the port
-(otherwise the SSH default is used). Examples:
+Name your Bitwarden SSH key items with the target.
+
+The first token shaped like `[user@]host[:port]` is used: the first hostname or
+IP becomes the host, an optional `user@` prefix sets the SSH user, and a
+trailing `:port` sets the port (otherwise the SSH default is used).
+
+Examples:
 
 - `pve1.example.com`
 - `ssh key ops pve1.example.com`
@@ -77,8 +95,9 @@ optional `user@` prefix sets the SSH user, and a trailing `:port` sets the port
 - `debian@pve1.example.com:2222` (also sets `User debian` and `Port 2222`)
 
 Version-like tokens such as `v1.2` are ignored, so they are never mistaken for a
-hostname. Add `[nobwsshd]` anywhere in the name to make bwsshd skip a key
-entirely.
+hostname.
+
+Add `[nobwsshd]` anywhere in the name to make bwsshd skip a key entirely.
 
 ---
 
@@ -130,15 +149,19 @@ make install
 ```
 
 This builds a stripped static binary into `~/.local/bin`, installs the user
-service, and enables it. Follow the logs with:
+service, and enables it.
+
+Follow the logs with:
 
 ```sh
 journalctl --user -u bwsshd -f
 ```
 
 The daemon polls the agent and rewrites the config only when the key set
-changes. When the Bitwarden app is closed the socket is absent, bwsshd clears
-the generated config and removes its key directory until the app comes back.
+changes.
+
+When the Bitwarden app is closed the socket is absent, bwsshd clears the
+generated config and removes its key directory until the app comes back.
 
 </details>
 
