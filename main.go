@@ -19,6 +19,9 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 )
 
+// version is set at build time by goreleaser via -ldflags -X main.version.
+var version = "dev"
+
 func main() {
 	log.SetPrefix("bwsshd: ")
 	log.SetFlags(0) // journald already timestamps each line
@@ -34,7 +37,13 @@ func main() {
 	sshConfig := flag.String("ssh-config", filepath.Join(home, ".ssh/config"), "ssh_config to add the Include line to")
 	watch := flag.Bool("watch", false, "loop instead of a single run")
 	interval := flag.Duration("interval", 10*time.Second, "poll interval in watch mode")
+	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println(version)
+		return
+	}
 
 	// Running as root would write keys and config owned by root in the user's
 	// ~/.ssh and defeats the whole point. Refuse it.
