@@ -1,11 +1,19 @@
+<div align="center">
+
 # bwsshd
+
+**Keep your `ssh_config` in sync with the SSH keys stored in your Bitwarden vault.**
+
+*One key per host, signed from the vault, never written to disk.*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/github/go-mod/go-version/Dxsk/bwsshd?logo=go&logoColor=white)](go.mod)
-[![Platform](https://img.shields.io/badge/platform-Linux-informational)](#requirements)
+![Platform](https://img.shields.io/badge/platform-Linux-informational)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-dxsk-yellow?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/dxsk)
 
-Keep your `ssh_config` in sync with the SSH keys stored in your Bitwarden vault.
+</div>
+
+---
 
 `bwsshd` watches the Bitwarden desktop SSH agent and generates a per-host
 `ssh_config` that pins exactly one key per host. SSH then offers the right key
@@ -17,10 +25,10 @@ tried.
 
 The Bitwarden desktop app can act as an
 [SSH agent](https://bitwarden.com/help/ssh-agent/#ssh-agent): your private keys
-never leave the vault and signing happens in the app. The catch is that the agent offers
-every key it holds, in no host-aware order. With many keys and a hardened
-server, SSH hits the auth-attempt limit before reaching the right key and the
-connection fails with `Permission denied (publickey)`.
+never leave the vault and signing happens in the app. The catch is that the
+agent offers every key it holds, in no host-aware order. With many keys and a
+hardened server, SSH hits the auth-attempt limit before reaching the right key
+and the connection fails with `Permission denied (publickey)`.
 
 `bwsshd` fixes this by reading the key list from the agent and writing one
 config block per host with `IdentitiesOnly yes`, so SSH offers a single,
@@ -72,7 +80,12 @@ Version-like tokens such as `v1.2` are ignored, so they are never mistaken for a
 hostname. Add `[nobwsshd]` anywhere in the name to make bwsshd skip a key
 entirely.
 
-## Install
+---
+
+<details>
+<summary><strong>Install</strong></summary>
+
+<br>
 
 ```sh
 go install github.com/Dxsk/bwsshd@latest
@@ -91,7 +104,12 @@ automatically (only once), so plain `ssh host` picks up the generated blocks:
 Include /home/you/.ssh/config.automatic.bw
 ```
 
-## Usage
+</details>
+
+<details>
+<summary><strong>Usage</strong></summary>
+
+<br>
 
 Run once to generate the config now:
 
@@ -105,7 +123,7 @@ Run as a background daemon that regenerates on every key change:
 bwsshd -watch
 ```
 
-### Run at login (systemd user service)
+**Run at login (systemd user service)**
 
 ```sh
 make install
@@ -122,7 +140,12 @@ The daemon polls the agent and rewrites the config only when the key set
 changes. When the Bitwarden app is closed the socket is absent, bwsshd clears
 the generated config and removes its key directory until the app comes back.
 
-## Flags
+</details>
+
+<details>
+<summary><strong>Flags</strong></summary>
+
+<br>
 
 | Flag | Default | Description |
 |------|---------|-------------|
@@ -135,7 +158,12 @@ the generated config and removes its key directory until the app comes back.
 
 Auto-discovery also honors `BW_SSH_SOCK` and `BITWARDEN_SSH_AUTH_SOCK` if set.
 
-## Safety notes
+</details>
+
+<details>
+<summary><strong>Safety notes</strong></summary>
+
+<br>
 
 - Refuses to run as root, all files belong to your user.
 - Config and keys are written `0600`, the key directory is `0700`.
@@ -143,7 +171,12 @@ Auto-discovery also honors `BW_SSH_SOCK` and `BITWARDEN_SSH_AUTH_SOCK` if set.
   refuses to touch a directory it does not own, so it can never delete your own
   keys.
 
-## Requirements
+</details>
+
+<details>
+<summary><strong>Requirements</strong></summary>
+
+<br>
 
 - Bitwarden desktop app with the SSH agent enabled
   (`Settings > SSH agent > Enable SSH agent`) - see
@@ -151,10 +184,14 @@ Auto-discovery also honors `BW_SSH_SOCK` and `BITWARDEN_SSH_AUTH_SOCK` if set.
 - SSH key items in your vault, named with their target host - see
   [storing an SSH key](https://bitwarden.com/help/ssh-agent/#storing-an-ssh-key)
 
+</details>
+
+---
+
 ## Support
 
-If this saved you some headaches, you can buy me a coffee:
-https://buymeacoffee.com/dxsk
+If this saved you some headaches, you can
+[buy me a coffee](https://buymeacoffee.com/dxsk).
 
 ## License
 
