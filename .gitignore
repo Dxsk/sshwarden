@@ -18,7 +18,8 @@ go.work.sum
 vendor/
 
 # Go build artifacts
-/dist/
+/dist/*
+!/dist/.gitkeep
 /bin/
 
 # IDE
@@ -115,4 +116,4 @@ secrets/
 credentials.json
 
 # Stray root binary from `go build .`
-/bwsshd
+bwsshd
